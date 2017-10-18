@@ -535,6 +535,9 @@ plot(L ~ CUBIST, pmirv, xlim=c(min(pmirv$L,pmirv$CUBIST), max(pmirv$L,pmirv$CUBI
 
 abline(c(0,1), col="red")
 
+plot(L ~ BART, pmirv, xlim=c(min(pmirv$L,pmirv$BART), max(pmirv$L,pmirv$BART)), ylim=c(min(pmirv$L,pmirv$BART), max(pmirv$L,pmirv$BART)), xlab = "BART prediction", ylab = "Observed", cex.lab=1.3)
+
+abline(c(0,1), col="red")
 
 # Ensemble predictions 
 
