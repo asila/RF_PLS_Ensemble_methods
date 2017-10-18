@@ -16,7 +16,7 @@ setwd("~/Calibrations")
 
 download("https://www.dropbox.com/s/h4wwc0e5v3747fw/Workshop_data.zip?dl=1", "Workshop_data.zip", mode="wb")
 
-unzip("Workshop_data.zip", overwrite=T)
+unzip("Workshop_data.zip", overwrite = T)
 
 raw <- read.csv("./Workshop_data/AfSIS_MIR_htsxt.csv") # Read HTS-xt spectral or Alpha or MPA tables
 
