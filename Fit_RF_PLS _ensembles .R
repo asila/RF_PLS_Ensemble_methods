@@ -1,12 +1,17 @@
-#PLS or RF
-#1. Setwd
+# Script for fitting PLS, RF and ensemble models
+#1. Begin by sourcing necessary wrapper functions. Ensure you have internet connection.
 #2. Read MIR data
 #3. Read reference data
 
+
 library(dplyr)
 
-# download soil data
-dir.create("~/AfSIS")
+library(downloader)
+
+# Data set up
+dir.create("~/Calibrations")
+
+setwd("~/Calibrations")
 
 download("https://www.dropbox.com/s/h4wwc0e5v3747fw/Workshop_data.zip?dl=1", "Workshop_data.zip", mode="wb")
 
@@ -18,7 +23,15 @@ ref<-read.csv("./Workshop_data/AfSIS_reference.csv") # Read reference data
 
 colnames(ref) <- c("SSN",colnames(ref[,-1]))
 
-source('~/Dropbox/temp/share/calibrations/RF_PLS_optimal.R', chdir = TRUE)
+#Source wrapper functions for fitting models
+
+rf_pls_url <- "https://raw.githubusercontent.com/asila/RF_PLS_Ensemble_methods/master/RF_PLS_optimal.R"
+
+source_url(rf_pls)
+
+ens_url <- "https://raw.githubusercontent.com/asila/RF_PLS_Ensemble_methods/master/0_ensemble.R" # This takes longer to complete
+
+source_url(ens_url)
 
 # Create results outputpath
 
@@ -40,9 +53,9 @@ hout<-ref[test,]
 
 calibrate(wd,raw,ref,hout, method="PLS") # Use PLS or RF regression methods 
 
-#Reset working directory
+# Use the second method? Reset working directory
 
-setwd("~/AfSIS") # Root directory
+setwd("~/Calibrations")
 
 dir.create(paste0("Infrared_calibration_models_",Sys.time()))
 
@@ -51,10 +64,8 @@ wd <- paste0("Infrared_calibration_models_",Sys.time())
 calibrate(wd,raw,ref,hout, method="RF")
 
 ## Ensemble
-#source('~/local.github/calibrations/Ensembles/0_ensemble.R', chdir = TRUE)
-source("/Users/andrewsila/local.github/calibrations/Ensembles/0_ensemble.R")
 
-setwd("~/AfSIS") # Root directory
+setwd("~/Calibrations") # Root directory
 
 dir.create(paste0("Ensemble_Infrared_calibration_models_",Sys.time()))
 
