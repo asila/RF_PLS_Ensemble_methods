@@ -28,7 +28,7 @@ colnames(ref) <- c("SSN",colnames(ref[,-1]))
 
 rf_pls_url <- "https://raw.githubusercontent.com/asila/RF_PLS_Ensemble_methods/master/RF_PLS_optimal.R"
 
-source_url(rf_pls)
+source_url(rf_pls_url)
 
 ens_url <- "https://raw.githubusercontent.com/asila/RF_PLS_Ensemble_methods/master/0_ensemble.R" # This takes longer to complete
 
@@ -36,10 +36,11 @@ source_url(ens_url)
 
 # Create results outputpath
 
-dir.create(paste0("Infrared_calibration_models_",Sys.time()))
+plswd <- gsub("-","_",gsub(":","_",paste0("PLS_calibration_models_",Sys.time())))
 
-wd <- paste0("Infrared_calibration_models_",Sys.time())
+dir.create(plswd)
 
+wd <- plswd
 set.seed(8892)
 
 #Randomly split training and validation reference samples
@@ -58,9 +59,11 @@ calibrate(wd,raw,ref,hout, method="PLS") # Use PLS or RF regression methods
 
 setwd("~/Calibrations")
 
-dir.create(paste0("Infrared_calibration_models_",Sys.time()))
+rfwd <- gsub("-","_",gsub(":","_",paste0("RF_calibration_models_",Sys.time())))
 
-wd <- paste0("Infrared_calibration_models_",Sys.time())
+dir.create(rfwd)
+
+wd <- rfwd
 
 calibrate(wd,raw,ref,hout, method="RF")
 
@@ -68,9 +71,11 @@ calibrate(wd,raw,ref,hout, method="RF")
 
 setwd("~/Calibrations") # Root directory
 
-dir.create(paste0("Ensemble_Infrared_calibration_models_",Sys.time()))
+enswd <- gsub("-","_",gsub(":","_",paste0("Ensemble_Infrared_calibration_models_",Sys.time())))
 
-wd <- paste0("Ensemble_Infrared_calibration_models_",Sys.time())
+dir.create(enswd)
+
+wd <- enswd
 
 set.seed(809892)
 
