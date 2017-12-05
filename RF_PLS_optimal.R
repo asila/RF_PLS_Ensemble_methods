@@ -44,7 +44,7 @@ suppressMessages(library(gridExtra))
 registerDoParallel()
 getDoParWorkers()
 
-calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS")){
+calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"),process = c("none","derivative", "msc", "snv","detrend")){
 	
 	if(method == "RF"){
 		
@@ -58,33 +58,96 @@ calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"
   
   hout <- hout
   
-  # Exclude metadata variables.
+  # set preprocessing methods.
   
-  mir1 <- as.matrix(mir[,-1])
-  
-  wave <- as.numeric(substr(colnames(mir1),2,19))
-  
-  prefx <- substr(colnames(mir1),1,1)[900]
+  if(process == "none"){
+  	
+  	#0. Raw
+	raw <- mir
+		
+	colnames(raw)<-c("SSN",colnames(raw[,-1]))
+	
+	write.table(raw,file= paste0( process, " processed spectra.csv"),sep=",",row.names=FALSE) # same as what was read, creates a duplicate!
+	}
 
-  colnames(mir1) <- wave
+
+  # set preprocessing methods.
   
+  if(process == "msc"){
+  	
+  	#1. MSC
+	mir.msc<-cbind(as.vector(mir[,1]),msc(as.matrix(mir[,-1])))
+	
+	colnames(mir.msc)<-c("SSN",colnames(mir[,-1]))
+	
+	write.table(mir.msc,file= paste0( process, " processed spectra.csv"),sep=",",row.names=FALSE)
+	}
+
+	#2. SNV
+	
+  if(process == "snv"){
+	
+	mir.snv<-cbind(as.vector(mir[,1]),standardNormalVariate(as.matrix(mir[,-1])))
+	
+	colnames(mir.snv) <- c("SSN",colnames(mir.snv[,-1]))
+	
+	write.table(mir.snv,file= paste0( process, " processed spectra.csv"),sep=",",row.names=FALSE)
+	
+	}
+	
+	
+
+	#3. SNV-detrending after snv a second order polynomial is fit on the spectra and substracted from it
+	
+	if(process =="detrend"){
+		
+	mir.de<-cbind(as.vector(mir[,1]),detrend(mir[,-1],as.numeric(substr(colnames(mir[,-1]),2,19))))
+
+	colnames(mir.de)<-c("SSN",colnames(mir.de[,-1]))
+	
+	write.table(mir.de,file= paste0( process, " processed spectra.csv"),sep=",",row.names=FALSE)
+	}
+		
+	#4. diff
+	if(process == "diff"){
+	gd1 <- cbind(as.vector(mir[,1]),t(diff(t(mir[,-1]),differences=1,lag=10)))
+	
+	colnames(gd1) <- c("SSN", colnames(gd1[,-1]))
+	
+	write.table(gd1,file= paste0( process, " processed spectra.csv"),sep=",",row.names=FALSE)
+
+	}
+
+  	  
+  	#5. First derivative
+  	
+  	mir1 <- as.matrix(mir[,-1])
   
-  # First derivative.
+  	wave <- as.numeric(substr(colnames(mir1),2,19))
   
-  de1 <- trans(mir1,tr = "derivative",order = 1,gap = 23)
+  	prefx <- substr(colnames(mir1),1,1)[900]
+  	
+  	colnames(mir1) <- wave
   
-  der1 <- rev(as.data.frame(de1$trans))
+  	if(process == "derivative"){
   
-  colnames(der1) <- paste0(prefx,wave)
+  	de1 <- trans(mir1,tr = "derivative",order = 1,gap = 23)
+  
+  	der1 <- rev(as.data.frame(de1$trans))
+  
+  	colnames(der1) <- paste0(prefx,wave)
   
   # Save derivative spectra.
   der1.ssn <- as.data.frame(cbind(as.vector(mir[,1]),der1))
   
   colnames(der1.ssn) <- c("SSN",colnames(der1))
   
-  write.table(der1.ssn,file = "First derivative.csv",sep = ",",row.names = FALSE)
+  write.table(der1.ssn,file = paste0( process, " processed spectra.csv"),sep = ",",row.names = FALSE)
+  }
   
-  der1.ssn<-as.data.frame(read_csv("First derivative.csv"))
+  # Use preprocessed table
+  
+  der1.ssn<-as.data.frame(read_csv(paste0( process, " processed spectra.csv")))
   
   # Merge with first derivative preprocessed spectra.
   
@@ -192,7 +255,7 @@ calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"
   	
 	p <- ggplot(pm, aes(x = measured,y = predicted)) + 
 	
-	geom_point(col = "black",size = 3,alpha = 0.5) + 
+	geom_point(col = "black",size = 2,alpha = 0.3) + 
 	
 	ggtitle(paste0("Calibration for ",hd[q])) + 
 	
@@ -200,7 +263,7 @@ calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"
 	
 	ylab("Predicted")
 	
-	p <- p + stat_smooth(method = lm, se = FALSE, color = 'black',alpha = 0.1)
+	p <- p + stat_smooth(method = lm, se = FALSE, color = 'black',alpha = 0.15)
 	
 	p <- p + theme(plot.title = element_text(lineheight = 3, face = "bold", color = "black", size = 20))
 	
@@ -223,7 +286,7 @@ calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"
 	
 	p2 <- ggplot(pmp, aes(x = measured.test,y = predicted.test))  + 
 	
-	geom_point(col = "brown",size = 3,alpha = 0.5)  + 
+	geom_point(col = "brown",size = 2,alpha = 0.3)  + 
 	
 	ggtitle(paste0("Validation for ",hd[q]))  + 
 	
@@ -231,7 +294,7 @@ calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"
 	
 	ylab("Predicted")
 	
-    p2 <- p2 + stat_smooth(method = lm, se = FALSE, color = 'brown',alpha = 0.1)
+    p2 <- p2 + stat_smooth(method = lm, se = FALSE, color = 'brown',alpha = 0.15)
     
     p2 <- p2 + theme(plot.title = element_text(lineheight = 3, face = "bold",
     
@@ -375,7 +438,7 @@ calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"
   	
   	p1 <- ggplot(pm, aes(x = measured,y = predicted)) + 
       
-   geom_point(col = "brown",size = 3,alpha = 0.2) + 
+   geom_point(col = "brown",size = 2,alpha = 0.3) + 
    
    ggtitle(paste0("Calibration for ",hd[q])) + 
    
@@ -383,7 +446,7 @@ calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"
    
    ylab("Predicted")
    
-   p1 <- p1 + stat_smooth(method = lm, se = FALSE, color = 'brown',alpha = 0.1)
+   p1 <- p1 + stat_smooth(method = lm, se = FALSE, color = 'brown',alpha = 0.15)
    
    p1 <- p1 + theme(plot.title = element_text(lineheight = 3,
    
@@ -454,39 +517,100 @@ calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"
   	
   	ref <- reference.data
   	
-  	#Exclude metadata variables
+  	  # set preprocessing methods.
+    # set preprocessing methods.
+  
+  if(process == "none"){
+  	
+  	#0. Raw
+	raw <- mir
+		
+	colnames(raw)<-c("SSN",colnames(raw[,-1]))
+	
+	write.table(raw,file= paste0( process, " processed spectra.csv"),sep=",",row.names=FALSE) # same as what was read, creates a duplicate!
+	}
 
+  
+  if(process == "msc"){
+  	
+  	#1. MSC
+	mir.msc<-cbind(as.vector(mir[,1]),msc(as.matrix(mir[,-1])))
+	
+	colnames(mir.msc)<-c("SSN",colnames(mir[,-1]))
+	
+	write.table(mir.msc,file= paste0( process, " processed spectra.csv"),sep=",",row.names=FALSE)
+	}
+
+	#2. SNV
+	
+  if(process == "snv"){
+	
+	mir.snv<-cbind(as.vector(mir[,1]),standardNormalVariate(as.matrix(mir[,-1])))
+	
+	colnames(mir.snv) <- c("SSN",colnames(mir.snv[,-1]))
+	
+	write.table(mir.snv,file= paste0( process, " processed spectra.csv"),sep=",",row.names=FALSE)
+	
+	}
+	
+	
+
+	#3. SNV-detrending after snv a second order polynomial is fit on the spectra and substracted from it
+	
+	if(process =="detrend"){
+		
+	mir.de<-cbind(as.vector(mir[,1]),detrend(mir[,-1],as.numeric(substr(colnames(mir[,-1]),2,19))))
+
+	colnames(mir.de)<-c("SSN",colnames(mir.de[,-1]))
+	
+	write.table(mir.de,file= paste0( process, " processed spectra.csv"),sep=",",row.names=FALSE)
+	}
+		
+	#4. diff
+	if(process == "diff"){
+	gd1 <- cbind(as.vector(mir[,1]),t(diff(t(mir[,-1]),differences=1,lag=10)))
+	
+	colnames(gd1) <- c("SSN", colnames(gd1[,-1]))
+	
+	write.table(gd1,file= paste0( process, " processed spectra.csv"),sep=",",row.names=FALSE)
+
+	}
+
+  	  
+  	#5. First derivative
+  	
   	mir1 <- as.matrix(mir[,-1])
-  	
-  	prefx <- substr(colnames(mir1),1,1)[900]
-
-  	
+  
   	wave <- as.numeric(substr(colnames(mir1),2,19))
+  
+  	prefx <- substr(colnames(mir1),1,1)[900]
   	
   	colnames(mir1) <- wave
-  	
-  	#First derivative
-  	
+  
+  	if(process == "derivative"){
+  
   	de1 <- trans(mir1,tr = "derivative",order = 1,gap = 23)
-  	
+  
   	der1 <- rev(as.data.frame(de1$trans))
-  	
+  
   	colnames(der1) <- paste0(prefx,wave)
-  	
-  	#Save derivative spectra
-  	
-  	der1.ssn <- as.data.frame(cbind(as.vector(mir[,1]),der1))
-  	
-  	colnames(der1.ssn) <- c("SSN",colnames(der1))
-  	
-  	write.table(der1.ssn,file = "First derivative.csv",
-  	
-  	sep = ",",row.names = FALSE)
-  	
-  	#merge with first derivative preprocessed spectra
-  	
+  
+  # Save derivative spectra.
+  der1.ssn <- as.data.frame(cbind(as.vector(mir[,1]),der1))
+  
+  colnames(der1.ssn) <- c("SSN",colnames(der1))
+  
+  write.table(der1.ssn,file = paste0( process, " processed spectra.csv"),sep = ",",row.names = FALSE)
+  }
+  
+   # Use preprocessed table
+  
+  der1.ssn<-as.data.frame(read_csv(paste0( process, " processed spectra.csv")))
+  
+  # Merge with first derivative preprocessed spectra.
+  
   	ref.mir <- merge(ref,der1.ssn,by.x = "SSN",by.y = "SSN")
-  	
+	
   	rc <- colnames(ref)
   	
   	#which columns contains reference data?
@@ -623,7 +747,7 @@ calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"
 		
 		p <- ggplot(pm, aes(x = measured,y = predicted)) + 
 		
-		geom_point(col = "black",size = 3,alpha = 0.5) + 
+		geom_point(col = "black",size = 2,alpha = 0.3) + 
 		
 		ggtitle(paste0("Calibration for ",hd[q])) + 
 		
@@ -631,7 +755,7 @@ calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"
 		
 		ylab("Predicted")
 		
-		p <- p + stat_smooth(method = lm, se = FALSE, color = 'black',alpha = 0.1)
+		p <- p + stat_smooth(method = lm, se = FALSE, color = 'black',alpha = 0.15)
 		
 		p <- p + theme(plot.title = element_text(lineheight = 3, face = "bold",
 		
@@ -667,7 +791,7 @@ calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"
 		
 		p2 <- ggplot(pmp, aes(x = measured.test,y = predicted.test)) + 
 		
-		geom_point(col = "brown",size = 3,alpha = 0.5) + 
+		geom_point(col = "brown",size = 2,alpha = 0.3) + 
 		
 		ggtitle(paste0("Validation for ",hd[q])) + 
 		
@@ -677,7 +801,7 @@ calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"
 		
 		p2 <- p2 + stat_smooth(method = lm, se = FALSE, color = 'brown',
 		
-		alpha = 0.1)
+		alpha = 0.15)
 		
 		p2 <- p2 + theme(plot.title = element_text(lineheight = 3,
 		
@@ -804,7 +928,7 @@ calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"
       	
       	p1 <- ggplot(pm, aes(x = measured,y = predicted)) + 
       	
-      	geom_point(col = "brown",size = 5,alpha = 0.5) + 
+      	geom_point(col = "brown",size = 2,alpha = 0.3) + 
       	
       	ggtitle(paste0("Calibration for ",hd[q])) + 
       	
@@ -814,7 +938,7 @@ calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"
       	
       	p1 <- p1 + stat_smooth(method = lm, se = FALSE, color = 'brown',
       	
-      	alpha = 0.1,size = 1.5) + 
+      	alpha = 0.15) + 
       	
       	theme(plot.title = element_text(lineheight = 3, 
       	
