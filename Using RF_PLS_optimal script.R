@@ -50,5 +50,5 @@ k <- which(raw$SSN %in% ref$SSN)
 
 hout<-ref[test,]
 
-calibrate(wd,raw,ref,hout, method="PLS", method = "none") # Use PLS or RF regression methods 
+calibrate(wd,raw,ref,hout, method="PLS", process = "none") # Use PLS or RF regression methods 
 
