@@ -329,7 +329,7 @@ calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"
   
   	# Save the model summary of the calibration and validation sets.
   
-  	colnames(msummary)<-c("Soil properties","OOB_RMSEC","OOB_Rsquared", "Holdout_RMSEP","Holdout_Rsquared")
+  	colnames(msummary)<-c("Soil_properties","OOB_RMSEC","OOB_Rsquared", "Holdout_RMSEP","Holdout_Rsquared")
   	
   	write.table(msummary,file = "Model_Summary.csv",sep = ",",row.names = FALSE)
   	
@@ -491,7 +491,7 @@ calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"
 
   colnames(all.predicted.SSN) <- c("SSN",hd)
 
-  colnames(msummary) <- c("Soil properties","RMSEC","Rsquared")
+  colnames(msummary) <- c("Soil_properties","RMSEC","Rsquared")
 
   #Save full models' summary and predicted values
    
@@ -984,7 +984,7 @@ calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"
       	
       	colnames(all.predicted.SSN) <- c("SSN",hd)
       	
-      	colnames(msummary)<-c("Soil properties","PCs","RMSEC","Rsquared")
+      	colnames(msummary)<-c("Soil_properties","PCs","RMSEC","Rsquared")
       	
       	#Save full model summaries
       	
