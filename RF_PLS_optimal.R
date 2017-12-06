@@ -41,8 +41,8 @@ suppressMessages(library(gridExtra))
 
 # Run in parallel to speed up the validation of the model fitting process.
 
-registerDoParallel()
-getDoParWorkers()
+#registerDoParallel()
+#getDoParWorkers()
 
 calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"),process = c("none","derivative", "msc", "snv","detrend")){
 	
@@ -329,9 +329,7 @@ calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"
   
   	# Save the model summary of the calibration and validation sets.
   
-  	colnames(msummary)<-c("Soil properties","OOB RMSEC","OOB Rsquared", "Holdout
-  	
-  	RMSEP","Holdout Rsquared")
+  	colnames(msummary)<-c("Soil properties","OOB_RMSEC","OOB_Rsquared", "Holdout_RMSEP","Holdout_Rsquared")
   	
   	write.table(msummary,file = "Model_Summary.csv",sep = ",",row.names = FALSE)
   	
@@ -834,9 +832,9 @@ calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"
 		dev.off()
 		
 		}
-      colnames(msummary) <- c("Soil properties","PCs","LOOCV RMSEC",
+      colnames(msummary) <- c("Soil_properties","PCs","LOOCV RMSEC",
       
-      "LOOCV Rsquared", "Holdout RMSEP","Holdout Rsquared")
+      "LOOCV_Rsquared", "Holdout_RMSEP","Holdout_Rsquared")
       
       write.table(msummary,file = "Model_Summary.csv",sep = ",",row.names = FALSE)
       
