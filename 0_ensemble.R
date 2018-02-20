@@ -373,8 +373,7 @@ registerDoParallel(mc)
 
 set.seed(1385321)
 
-ctc <- cubistControl(unbiased = TRUE, rules = NA)
-
+ctc <- cubistControl(unbiased = TRUE, rules = 100, sample = 70)
 
 
 # Fit models
