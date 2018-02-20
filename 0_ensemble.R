@@ -322,9 +322,7 @@ registerDoParallel(mc)
 
 # Control setup
 
-tc <- trainControl(method = "cv", returnResamp = "all", allowParallel = T)
-
-
+tc <- trainControl(method = "boot", returnResamp = "all", allowParallel = T)
 
 
 # Fit model
@@ -351,9 +349,7 @@ bar_mir <- predict(mir.bar, mirv)
 
 saveRDS(mir.bar, file = paste0(ref.hd[q],"_bart.RDS"))
 
-
 rm("mir.bar")
-
 
 gcinfo(TRUE)
 
