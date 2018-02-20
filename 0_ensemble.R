@@ -322,7 +322,7 @@ registerDoParallel(mc)
 
 # Control setup
 
-tc <- trainControl(method = "adaptive_cv", returnResamp = "all", allowParallel = T)
+tc <- trainControl(method = "LGOCV", returnResamp = "final", allowParallel = T)
 
 
 # Fit model
@@ -340,6 +340,8 @@ mir.bar <- train(mirt, lt,
                  #serialize = TRUE,
 
                  run_in_sample = FALSE,
+                 
+                 p = 0.75,
                  
                  seed = 123)
 
