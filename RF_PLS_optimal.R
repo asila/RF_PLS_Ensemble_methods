@@ -705,7 +705,7 @@ calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"
 		
 		#computes RMSE and R-squared values for the calibration set
 
-		training.parameters <- round(postResample(predi,y),2)
+		training.parameters <- round(postResample(predi,y),3)
 		
 		RSQ <- training.parameters[2]
 		
@@ -908,9 +908,9 @@ calibrate <- function(wd,infrared.data,reference.data,hout,method = c("RF","PLS"
       	
       	training.parameters <- c(hd[q],PCs,round(postResample(predi,y),3))
       	
-      	RSQ <- round(as.numeric(training.parameters[4]),2)
+      	RSQ <- round(as.numeric(training.parameters[4]),3)
       	
-      	RMSE <- round(as.numeric(training.parameters[3]),2)
+      	RMSE <- round(as.numeric(training.parameters[3]),3)
       	
       	msummary <- rbind(msummary,training.parameters)
       	

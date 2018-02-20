@@ -10,17 +10,17 @@ library(dplyr)
 library(downloader)
 
 # Data set up
-dir.create("~/Calibrations")
+dir.create("./Calibrations")
 
-setwd("~/Calibrations")
+setwd("./Calibrations")
 
-download("https://www.dropbox.com/s/h4wwc0e5v3747fw/Workshop_data.zip?dl=1", "Workshop_data.zip", mode="wb")
+download("https://www.dropbox.com/s/76beos74ufvgiyu/iiss_cal.zip?dl=1", "iiss_cal.zip", mode="wb")
 
-unzip("Workshop_data.zip", overwrite = T)
+unzip("iiss_cal.zip", overwrite = T)
 
-raw <- read.csv("./Workshop_data/AfSIS_MIR_htsxt.csv") # Read HTS-xt spectral or Alpha or MPA tables
+raw <- read.csv("./IISS_mir spectra.csv") # Read HTS-xt spectral or Alpha or MPA tables
 
-ref<-read.csv("./Workshop_data/AfSIS_reference.csv") # Read reference data
+ref<-read.csv("./IISS_cn data.csv") # Read reference data
 
 colnames(ref) <- c("SSN",colnames(ref[,-1]))
 
@@ -32,7 +32,7 @@ source_url(rf_pls_url)
 
 # Create results outputpath
 
-plswd <- "PLS_calibration_models")
+plswd <- "PLS_calibration_models"
 
 dir.create(plswd)
 
@@ -50,5 +50,5 @@ k <- which(raw$SSN %in% ref$SSN)
 
 hout<-ref[test,]
 
-calibrate(wd,raw,ref,hout, method="PLS", process = "none") # Use PLS or RF regression methods 
+calibrate(wd,raw,ref,hout, method="RF", process = "derivative") # Use PLS or RF regression methods 
 

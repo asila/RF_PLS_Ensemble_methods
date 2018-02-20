@@ -1,5 +1,5 @@
 # Script for fitting calibration models for infrared spectroscopy data. ----------------------------------------------------------------
-# Author: Andrew Sila , April 2016. --------------------------------
+# Author: Andrew Sila , February 2018. --------------------------------
 
 # Begin by checking the required packages are installed. --------------------------------
 is.installed <- function(anypkg){
@@ -64,22 +64,24 @@ colnames(si) <- c("SSN", colnames(si[,-1]))
 si.r <- na.omit(merge(ref,si))
 
 #Select a random set for calibration and validation
-if(hout!=0){
-m <- round(hout*nrow(si.r))
 
-set.seed(98752)
-intest <- sample(1:nrow(si.r),m)
+intest <- which(si.r$SSN%in%hout$SSN)
+
+#$if(hout!=0){
+#m <- round(hout*nrow(si.r))
+
+#intest <- sample(1:nrow(si.r),m)
 
 cal <- si.r [-intest, ]
 
 val <- si.r [intest, ]
-}
+#}
 
-if(hout==0){
-cal <- si.r 
+#if(hout==0){
+#cal <- si.r 
 
-val <- si.r
-}
+#val <- si.r
+#}
 
 ## check potential labels for response variable
 
@@ -99,7 +101,7 @@ mirt <- cal[,-c(1:ncol(ref))] # soil MIR
 
 mirv <- val[,-c(1:ncol(ref))] # soil MIR
 
-mir.a <- si[,-1] # all mir spectra for prediction 
+
 
 
 # RF models ---------------------------------------------------------------
@@ -113,7 +115,7 @@ library(randomForest)
 
 # Start doParallel to parallelize model fitting
 
-mc <- makeCluster(detectCores())
+mc <- makeCluster(detectCores(logical = FALSE))
 
 registerDoParallel(mc)
 
@@ -131,9 +133,8 @@ tc <- trainControl(method = "cv", allowParallel = T)
 
 # Tuning parameters
 
-#tg <- expand.grid(mtry=seq(10, 150, by=10))
+tg <- expand.grid(mtry=seq(10, 150, by=10))
 
-tg <- expand.grid(mtry=seq(10, 80, by=10))
 
 
 
@@ -145,7 +146,7 @@ mir.rfo <- train(mirt, lt,
 
                  method = "rf",
 
-                 ntree = 101,
+                 ntree = 201,
 
                  tuneGrid = tg,
 
@@ -154,8 +155,6 @@ mir.rfo <- train(mirt, lt,
 print(mir.rfo)
 
 rfo_mir <- predict(mir.rfo, mirv) ## predict validation set
-
-rfo_mir.a <- predict(mir.rfo, mir.a) ## predict validation set
 
 # Save the model 
 
@@ -185,7 +184,7 @@ library(gbm)
 
 # Start doParallel to parallelize model fitting
 
-mc <- makeCluster(detectCores())
+mc <- makeCluster(detectCores(logical = FALSE))
 
 registerDoParallel(mc)
 
@@ -228,9 +227,6 @@ print(mir.gbm)
 
 gbm_mir <- predict(mir.gbm, mirv) ## predict validation set
 
-gbm_mir.a <- predict(mir.gbm, mir.a) ## predict full set
-
-
 # Save the model 
 
 saveRDS(mir.gbm, file = paste0(ref.hd[q],"_gbm.RDS"))
@@ -257,7 +253,7 @@ library(pls)
 
 # Start doParallel to parallelize model fitting
 
-mc <- makeCluster(detectCores())
+mc <- makeCluster(detectCores(logical = FALSE))
 
 registerDoParallel(mc)
 
@@ -289,9 +285,6 @@ print(mir.pls)
 
 pls_mir <- exp(predict(mir.pls, mirv)) ## predict validation set
 
-pls_mir.a <- exp(predict(mir.pls, mir.a)) ## predict full set
-
-
 # Save the model 
 
 saveRDS(mir.pls ,file = paste0(ref.hd[q],"_pls.RDS"))
@@ -306,6 +299,9 @@ stopCluster(mc)
 
 detach("package:pls", unload=TRUE)
 
+
+
+
 # bartMachine models ------------------------------------------------------
 
 options(java.parameters = "-Xmx5g")
@@ -317,7 +313,7 @@ library(bartMachine)
 
 # Start doParallel to parallelize model fitting
 
-mc <- makeCluster(detectCores())
+mc <- makeCluster(detectCores(logical = FALSE))
 
 registerDoParallel(mc)
 
@@ -351,9 +347,6 @@ print(mir.bar)
 
 bar_mir <- predict(mir.bar, mirv)
 
-bar_mir.a <- predict(mir.bar, mir.a) ## predict full set
-
-
 # Save the model 
 
 saveRDS(mir.bar, file = paste0(ref.hd[q],"_bart.RDS"))
@@ -368,43 +361,38 @@ stopCluster(mc)
 
 detach("package:bartMachine", unload=TRUE)
 
-
 # cubist models 
 library(Cubist)
 
 # Start doParallel to parallelize model fitting
 
-mc <- makeCluster(detectCores())
+mc <- makeCluster(detectCores(logical = FALSE))
 
 registerDoParallel(mc)
 # Control setup
 
 set.seed(1385321)
 
-ctc <- cubistControl(unbiased = TRUE, rules = NA, sample = 0.3)
+ctc <- cubistControl(unbiased = TRUE, rules = NA)
 
 
 
 # Fit models
-#committees <- round(c(0.25*nrow(mirt),0.35*nrow(mirt),0.45*nrow(mirt),0.5*nrow(mirt),0.75*nrow(mirt)),0)
+committes <- round(c(0.25*nrow(mirt),0.35*nrow(mirt),0.45*nrow(mirt),0.5*nrow(mirt),0.75*nrow(mirt)),0)
 
 mir.cubist <- train(mirt, lt,
 
                  preProc = c("center", "scale"),
 
-                 method = "cubist")
+                 method = "cubist",
 
-                 #tuneGrid = expand.grid(.committees = committees,.neighbors = 0))
-                 
-                 #.committees = committees)
+                 tuneGrid = expand.grid(.committees = committess,.neighbors = 0),
 
-                 #trControl = ctc)
+                 trControl = ctc)
 
 print(mir.cubist)
 
 cubist_mir <- predict(mir.cubist, mirv) ## predict validation set
-
-cubist_mir.a <- predict(mir.cubist, mir.a) ## predict full set
 
 # Save the model 
 
@@ -419,16 +407,14 @@ stopCluster(mc)
 
 detach("package:Cubist", unload=TRUE)
 
+
+
 # Model stacking setup ----------------------------------------------------
 
-pmirv <- as.data.frame(cbind(lv, rfo_mir, gbm_mir, pls_mir,bar_mir,cubist_mir))
+pmirv <- as.data.frame(cbind(lv, rfo_mir, gbm_mir, pls_mir, bar_mir,cubist_mir))
 
+names(pmirv) <- c("L", "RFO", "GBM", "PLS", "BART","CUBIST")
 
-pmirv.a <- as.data.frame(cbind(rfo_mir.a, gbm_mir.a, pls_mir.a,bar_mir.a,cubist_mir.a))
-
-names(pmirv) <- c("L", "RFO", "GBM", "PLS","BART","CUBIST")
-
-names(pmirv.a) <- c("RFO", "GBM", "PLS","BART","CUBIST")
 
 
 
@@ -448,7 +434,7 @@ library(glmnet)
 
 # Start doParallel to parallelize model fitting
 
-mc <- makeCluster(detectCores())
+mc <- makeCluster(detectCores(logical = FALSE))
 
 registerDoParallel(mc)
 
@@ -484,13 +470,8 @@ ens_mir <- as.data.frame(predict(mir.ens, pmirv))
 
 names(ens_mir) <- c("ENS")
 
-ens_mir.a <- as.data.frame(predict(mir.ens, pmirv.a))
-
-names(ens_mir.a) <- c("ENS")
-
 pmirv <- cbind(pmirv, ens_mir)
 
-pmirv.a <- cbind(pmirv.a, ens_mir.a)
 
 
 
@@ -503,7 +484,6 @@ stopCluster(mc)
 
 write.csv(pmirv, paste0(ref.hd[q],"_pmirv.csv"), row.names=F)
 
-write.csv(pmirv.a, paste0(ref.hd[q],"_pmirv.a.csv"), row.names=F)
 
 png(file = paste0(ref.hd[q],".png"), height = 400, width = 600)
 # Prediction plots --------------------------------------------------------
@@ -531,13 +511,14 @@ plot(L ~ PLS, pmirv, xlim=c(min(pmirv$L,pmirv$PLS), max(pmirv$L,pmirv$PLS)), yli
 
 abline(c(0,1), col="red")
 
+plot(L ~ BART, pmirv, xlim=c(min(pmirv$L,pmirv$BART), max(pmirv$L,pmirv$BART)), ylim=c(min(pmirv$L,pmirv$BART), max(pmirv$L,pmirv$BART)), xlab = "BART prediction", ylab = "Observed", cex.lab=1.3)
+
+abline(c(0,1), col="red")
+
 plot(L ~ CUBIST, pmirv, xlim=c(min(pmirv$L,pmirv$CUBIST), max(pmirv$L,pmirv$CUBIST)), ylim=c(min(pmirv$L,pmirv$CUBIST), max(pmirv$L,pmirv$CUBIST)), xlab = "CUBIST prediction", ylab = "Observed", cex.lab=1.3)
 
 abline(c(0,1), col="red")
 
-plot(L ~ BART, pmirv, xlim=c(min(pmirv$L,pmirv$BART), max(pmirv$L,pmirv$BART)), ylim=c(min(pmirv$L,pmirv$BART), max(pmirv$L,pmirv$BART)), xlab = "BART prediction", ylab = "Observed", cex.lab=1.3)
-
-abline(c(0,1), col="red")
 
 # Ensemble predictions 
 
