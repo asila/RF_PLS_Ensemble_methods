@@ -331,7 +331,7 @@ mir.bar <- train(mirt, lt,
 
                  method = "bartMachine", 
 
-                 preProc = c("center", "scale"),
+                 #preProc = c("center", "scale"),
 
                  trControl = tc,
 
