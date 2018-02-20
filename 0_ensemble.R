@@ -322,7 +322,7 @@ registerDoParallel(mc)
 
 # Control setup
 
-tc <- trainControl(method = "none", returnResamp = "all", allowParallel = T)
+tc <- trainControl(method = "adaptive_cv", returnResamp = "all", allowParallel = T)
 
 
 # Fit model
