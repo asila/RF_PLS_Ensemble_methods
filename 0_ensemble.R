@@ -337,9 +337,9 @@ mir.bar <- train(mirt, lt,
 
                  trControl = tc,
 
-                 tuneLength = 2,
+                 #tuneLength = 2,
                  
-                 serialize = TRUE,
+                 #serialize = TRUE,
 
                  seed = 123)
 
