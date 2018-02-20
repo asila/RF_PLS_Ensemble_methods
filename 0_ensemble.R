@@ -322,7 +322,7 @@ registerDoParallel(mc)
 
 # Control setup
 
-tc <- trainControl(method = "boot", returnResamp = "all", allowParallel = T)
+tc <- trainControl(method = "none", returnResamp = "all", allowParallel = T)
 
 
 # Fit model
@@ -339,6 +339,8 @@ mir.bar <- train(mirt, lt,
                  
                  #serialize = TRUE,
 
+                 run_in_sample = FALSE,
+                 
                  seed = 123)
 
 print(mir.bar)
